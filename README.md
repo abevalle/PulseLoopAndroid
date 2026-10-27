@@ -238,6 +238,63 @@ This is only applicable to 56ff/Jring rings.
 
 ---
 
+## Fork: MQTT Export to Home Assistant
+
+This fork is based on [foureight84/PulseLoopAndroid](https://github.com/foureight84/PulseLoopAndroid)
+(licensed CC BY 4.0) and builds on that project's work. The changes add an MQTT export,
+kept in its own package (`app/src/main/java/com/pulseloop/export/mqtt/`). The rest of the app
+only gains one-line hooks, a settings row and a route. Health Connect export, the ring drivers
+and pairing are unchanged.
+
+**What it does.** It publishes every stored ring reading to your own MQTT broker, stamped with
+the time the reading was taken. Home Assistant gets the full all-day series instead of just the
+latest value. Nothing goes to the cloud.
+
+**Setup.** Go to Settings → MQTT Export and fill in the host, port (default 1883), username,
+password, client ID, base topic (default `pulseloop`), and optionally TLS. Tap **Test connection**,
+which reports success, an auth failure, a refused connection, a timeout, an unknown host or a TLS
+error. Then switch it on. The first run exports **all stored history**, in batches of 50,
+250 ms apart. The password is kept in EncryptedSharedPreferences and is never logged.
+
+**Topics** (`<device>` is the ring's advertised name, slugged, e.g. `colmi_ring_2`):
+
+| Topic | Retained | Content |
+|---|---|---|
+| `pulseloop/<device>/<type>` | yes | Latest reading only. HA sensors read this. |
+| `pulseloop/<device>/<type>/history` | no | Every reading, once, QoS 1 |
+| `homeassistant/sensor/pulseloop_<id>/<type>/config` | yes | HA discovery |
+
+Types: `heart_rate`, `hrv`, `spo2`, `stress`, `skin_temperature`, `steps` (15-minute buckets,
+history only), `steps_daily` (day total), `battery`, `sleep`. Discovery creates sensors only
+for types your ring has actually produced. Payload:
+
+```json
+{"ts": "2026-10-26T08:05:00-07:00", "value": 72, "unit": "bpm", "source": "history"}
+```
+
+A sleep payload also carries `session_id`, `start`, `end`, `span_min`, `stages` (minutes per
+stage) and `score`. `value` is time asleep. A night that a later sync revises is republished with
+the same `session_id`, and so is today's step total as it grows.
+
+**When it runs.** After every ring sync (foreground and the ~30-minute background sync) and
+whenever the app comes to the foreground. It runs as a WorkManager job that needs network, with
+no extra service and no wake lock. If the broker can't be reached (say, the phone is off your
+home Wi-Fi), nothing is marked as sent. The job retries with backoff, and the next sync, app open
+or reconnect picks up where it left off. The settings screen shows the last publish time, the
+last error and how many readings are queued.
+
+**Things to know:**
+- **History messages are not retained.** To keep them, have a subscriber with a persistent
+  session (`clean_session=false`, QoS 1) on `pulseloop/+/+/history`, so that Mosquitto queues
+  messages while it's offline. With no subscriber at all, the broker drops them.
+- **HA records a state at the time it arrives**, not at the reading's `ts`. The retained state
+  carries `ts` as an attribute. To put the backdated series into HA's own charts, import from the
+  history topics (with AppDaemon, InfluxDB or a statistics import).
+- **Deletions are not exported.** A reading you delete in the app after it was published stays
+  in MQTT and HA.
+- **Settings → MQTT Export → Re-export all** forgets what has been sent and publishes everything
+  again.
+
 ## Build
 
 ```bash
