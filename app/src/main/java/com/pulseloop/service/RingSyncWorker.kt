@@ -124,6 +124,7 @@ class RingSyncWorker(
                 // data — run the (debounced) export pass. The foreground path triggers the same
                 // worker via the SyncProgress("done") event, so both sync owners cover it.
                 HealthConnectExportWorker.enqueue(applicationContext)
+                com.pulseloop.export.mqtt.MqttExportWorker.enqueue(applicationContext) // fork: MQTT export
 
                 Result.success()
             }

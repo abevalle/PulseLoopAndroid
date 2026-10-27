@@ -47,6 +47,8 @@ class PulseLoopApplication : Application() {
                 if (event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_STOP) {
                     WidgetSnapshotPublisher.publish(this)
                 }
+                // Fork: MQTT export catches up on foreground (no-op unless enabled).
+                if (event == Lifecycle.Event.ON_START) com.pulseloop.export.mqtt.MqttExportWorker.enqueue(this)
                 // Bedtime/DND (issue #83): reconcile the window log with the current Mode in case
                 // the listener was unbound across an edge. The listener records the edges.
                 if (event == Lifecycle.Event.ON_START && QuietHoursPrefs.isZenTrackingActive(this)) {

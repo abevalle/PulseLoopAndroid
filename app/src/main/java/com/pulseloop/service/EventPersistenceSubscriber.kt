@@ -409,6 +409,7 @@ class EventPersistenceSubscriber(
                     // moment new measurements can have landed. Debounced 15 s + REPLACE in the
                     // worker, so this is cheap to fire on every done.
                     HealthConnectExportWorker.enqueue(context)
+                    com.pulseloop.export.mqtt.MqttExportWorker.enqueue(context) // fork: MQTT export
                 }
             }
             is PulseEvent.HeartRateComplete -> {}
