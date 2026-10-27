@@ -1981,6 +1981,8 @@ fun WearableSettingsScreen(
             BatteryHistorySection(db)
         }
 
+        if (device != null) com.pulseloop.fork.SyncIntervalCard() // fork: background sync interval
+
         if (device != null) {
             QuietHoursCard()
         }

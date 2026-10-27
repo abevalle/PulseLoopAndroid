@@ -34,9 +34,11 @@ class RingSyncWorker(
 
         /** Schedule periodic background ring sync. Call from MainActivity. */
         fun schedule(context: Context) {
+            // Fork: interval is user-set (default 15 min, upstream's 30 kept as an option).
+            val interval = com.pulseloop.fork.SyncIntervalPrefs.minutes(context).toLong()
             val request = PeriodicWorkRequestBuilder<RingSyncWorker>(
-                30, TimeUnit.MINUTES,  // repeat interval
-                15, TimeUnit.MINUTES,  // flex interval
+                interval, TimeUnit.MINUTES,  // repeat interval
+                com.pulseloop.fork.SyncIntervalPrefs.flexMinutes(interval.toInt()).toLong(), TimeUnit.MINUTES,  // flex interval
             )
                 .setConstraints(
                     Constraints.Builder()
@@ -52,7 +54,9 @@ class RingSyncWorker(
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                // Fork: UPDATE (not KEEP) so a changed interval applies; an unchanged one keeps the
+                // current schedule.
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
         }
