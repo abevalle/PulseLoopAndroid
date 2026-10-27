@@ -629,6 +629,9 @@ fun PulseLoopApp() {
                 paddedComposable("settings/health-connect") {
                     HealthConnectSettingsScreen(onBack = { navController.popBackStack() })
                 }
+                paddedComposable("settings/mqtt-export") { // fork: MQTT export
+                    com.pulseloop.export.mqtt.MqttExportSettingsScreen(onBack = { navController.popBackStack() })
+                }
                 paddedComposable("settings/nutrition") {
                     NutritionSettingsScreen(
                         onBack = { navController.popBackStack() },

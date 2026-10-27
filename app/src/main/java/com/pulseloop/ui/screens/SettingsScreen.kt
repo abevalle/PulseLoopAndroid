@@ -167,6 +167,10 @@ fun SettingsScreen(
                 add(SettingsRowItem(Icons.Filled.Sync, PulseColors.success, "Health Connect") {
                     navigate("settings/health-connect")
                 })
+                // Fork: MQTT export to Home Assistant.
+                add(SettingsRowItem(Icons.Filled.Sync, PulseColors.accent, "MQTT Export") {
+                    navigate("settings/mqtt-export")
+                })
                 add(SettingsRowItem(Icons.Filled.Info, PulseColors.textMuted, "About PulseLoop") {
                     navigate("settings/about")
                 })
