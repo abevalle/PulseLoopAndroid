@@ -15,7 +15,10 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.pulseloop"
+        // Fork identity: installs beside upstream's com.pulseloop instead of replacing it (and its
+        // data). Code packages stay com.pulseloop. UpdateChecker only self-updates when the id is
+        // exactly "com.pulseloop", so this build never offers itself upstream's releases.
+        applicationId = "com.pulseloop.abe"
         minSdk = 26
         targetSdk = 35
         // versionCode/versionName are overridable from Gradle properties so the release CI

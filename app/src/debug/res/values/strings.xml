@@ -2,5 +2,5 @@
 <resources>
     <!-- Debug-only launcher label so this build is distinguishable from a release install
          on the same device (paired with the .debug applicationId suffix). -->
-    <string name="app_name">PulseLoop Debug</string>
+    <string name="app_name">PulseLoop (Abe) Debug</string>
 </resources>
