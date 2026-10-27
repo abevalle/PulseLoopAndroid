@@ -71,6 +71,18 @@ interface MqttExportDao {
     @Query("DELETE FROM mqtt_cursor")
     suspend fun clearCursors()
 
+    @Query("UPDATE mqtt_cursor SET watermark = NULL")
+    suspend fun clearWatermarks()
+
+    @Query("UPDATE mqtt_status SET backfillCompletedAt = NULL")
+    suspend fun clearBackfill()
+
+    @Transaction
+    suspend fun rewind() {
+        clearWatermarks()
+        clearBackfill()
+    }
+
     @Transaction
     suspend fun reset() {
         clearLedger()
@@ -142,6 +154,8 @@ class RoomExportStateStore(private val db: MqttExportDatabase) : ExportStateStor
     override suspend fun prune(cutoff: Long) = dao.prune(cutoff, ExportStateStore.DISCOVERY)
 
     override suspend fun reset() = dao.reset()
+
+    override suspend fun rewind() = dao.rewind()
 
     private fun MqttStatusRow.toStatus() =
         ExportStatus(lastPublishAt, lastAttemptAt, lastError, pending, backfillCompletedAt)

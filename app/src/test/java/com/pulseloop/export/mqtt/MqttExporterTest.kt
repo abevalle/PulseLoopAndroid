@@ -51,6 +51,7 @@ class MqttExporterTest {
         override suspend fun updateStatus(transform: (ExportStatus) -> ExportStatus) { status.value = transform(status.value) }
         override suspend fun prune(cutoff: Long) { ledger.entries.removeIf { it.key.first != ExportStateStore.DISCOVERY && it.value.sampleTs < cutoff } }
         override suspend fun reset() { watermarks.clear(); stateTs.clear(); ledger.clear(); status.value = ExportStatus() }
+        override suspend fun rewind() { watermarks.clear(); status.value = status.value.copy(backfillCompletedAt = null) }
     }
 
     /** Records acknowledged publishes; optionally fails the Nth publish call. */
@@ -174,6 +175,28 @@ class MqttExporterTest {
         exporter(source, state, t).runPass(config)
         assertEquals(1, t.history().size)
         assertTrue(t.history().single().payload.contains("410"))
+    }
+
+    @Test
+    fun `imported history below the watermark is exported after a rewind, without resending what was sent`() = runTest {
+        val source = FakeSource(device).apply { add(hr("live", 1_000, now - 1000)) }
+        val state = FakeState()
+        exporter(source, state, FakeTransport()).runPass(config)
+
+        // Import from the upstream install: old rows keep their old createdAt, below the watermark,
+        // and are far older than the ledger floor.
+        source.add(hr("imported", 5, now - 90L * 24 * 60 * 60 * 1000))
+        val ignored = FakeTransport()
+        exporter(source, state, ignored).runPass(config)
+        assertTrue(ignored.history().isEmpty())
+
+        state.rewind()
+        val t = FakeTransport()
+        exporter(source, state, t).runPass(config)
+        assertEquals(1, t.history().size)
+        assertTrue(t.history().single().payload.contains("\"ts\":${now - 90L * 24 * 60 * 60 * 1000}"))
+        // The retained state still holds the newest reading, not the imported one.
+        assertTrue(t.states(ExportType.HEART_RATE).isEmpty())
     }
 
     @Test

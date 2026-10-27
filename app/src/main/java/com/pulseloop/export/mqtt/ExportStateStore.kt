@@ -50,6 +50,14 @@ interface ExportStateStore {
     /** Forgets everything — the "Re-export all history" action. */
     suspend fun reset()
 
+    /**
+     * After a data import: drops the watermarks and the backfill mark so imported rows (which keep
+     * their original `createdAt`, below the watermarks) are re-planned with no floor. The ledger
+     * and the retained-state times are kept, so readings already sent are not sent twice and the
+     * state topics never move backwards.
+     */
+    suspend fun rewind()
+
     companion object {
         const val DISCOVERY = "discovery"
     }

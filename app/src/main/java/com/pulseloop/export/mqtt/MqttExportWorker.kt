@@ -72,6 +72,12 @@ class MqttExportWorker(context: Context, params: WorkerParameters) : CoroutineWo
             WorkManager.getInstance(context).enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, request)
         }
 
+        /** A data import landed rows below the watermarks: re-plan from scratch (see [ExportStateStore.rewind]). */
+        suspend fun onDataImported(context: Context) {
+            RoomExportStateStore(MqttExportDatabase.get(context)).rewind()
+            enqueue(context)
+        }
+
         fun cancel(context: Context) {
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }

@@ -638,6 +638,8 @@ object DataArchiveService {
             val now = System.currentTimeMillis()
             HealthConnectWatermarks.Key.values().forEach { hcStore.setWatermark(it, now) }
         }
+        // Fork: unlike Health Connect, the MQTT export *should* publish imported history.
+        com.pulseloop.export.mqtt.MqttExportWorker.onDataImported(context)
 
         archive
     }
