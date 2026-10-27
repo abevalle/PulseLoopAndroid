@@ -113,6 +113,14 @@ android {
         checkReleaseBuilds = false
     }
 
+    packaging {
+        resources {
+            // Netty (pulled in by the HiveMQ MQTT client, see export/mqtt) ships these in every
+            // jar; they collide at merge time and nothing reads them at runtime.
+            excludes += listOf("META-INF/INDEX.LIST", "META-INF/io.netty.versions.properties")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -197,6 +205,11 @@ dependencies {
     // signature, but the graph also carries Google's "9999.0-empty-to-avoid-conflict-with-guava"
     // stub, which strips the class at compile time. Full guava restores it.
     implementation("com.google.guava:guava:33.3.1-android")
+
+    // Fork: MQTT export to Home Assistant (export/mqtt). HiveMQ over Paho: Paho Java's last
+    // release is 1.2.5 (2020) and the Paho Android Service needs a bound service and breaks on
+    // Android 12+; HiveMQ is maintained, async, and runs fine inside a WorkManager worker.
+    implementation("com.hivemq:hivemq-mqtt-client:1.4.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

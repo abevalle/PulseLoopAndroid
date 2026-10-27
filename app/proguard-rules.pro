@@ -28,3 +28,11 @@
 -keepclasseswithmembers class com.pulseloop.update.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# Fork: HiveMQ MQTT client (export/mqtt). Netty and JCTools reach fields reflectively by name
+# (HiveMQ's Android guidance); the dontwarns cover optional Netty integrations Android lacks.
+-keepclassmembernames class io.netty.** { *; }
+-keepclassmembers class org.jctools.** { *; }
+-dontwarn io.netty.**
+-dontwarn org.jctools.**
+-dontwarn reactor.blockhound.**
